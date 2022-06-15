@@ -3,10 +3,9 @@
  * @description Unlocks the App Directory with the use of Top.gg APIs
  * @author FedeIlLeone
  * @authorId 403195964241739776
- * @version 0.0.1
- * @updateUrl
- * @website
- * @source
+ * @version 0.0.2
+ * @updateUrl https://raw.githubusercontent.com/FedeIlLeone/BetterDiscordAddons/main/AppDirectoryUnlock/AppDirectoryUnlock.plugin.js
+ * @source https://github.com/FedeIlLeone/BetterDiscordAddons/blob/main/AppDirectoryUnlock/
  */
 
 /*@cc_on
@@ -34,7 +33,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"App Directory Unlock","authors":[{"name":"FedeIlLeone","discord_id":"403195964241739776","github_username":"FedeIlLeone"}],"version":"0.0.1","description":"Unlocks the App Directory with the use of Top.gg APIs","github":"","github_raw":""},"changelog":[{"title":"First Release","items":["First release of the plugin!"]}],"main":"index.js"};
+    const config = {"info":{"name":"AppDirectoryUnlock","authors":[{"name":"FedeIlLeone","discord_id":"403195964241739776","github_username":"FedeIlLeone"}],"version":"0.0.2","description":"Unlocks the App Directory with the use of Top.gg APIs","github":"https://github.com/FedeIlLeone/BetterDiscordAddons","github_raw":"https://raw.githubusercontent.com/FedeIlLeone/BetterDiscordAddons/main/AppDirectoryUnlock/AppDirectoryUnlock.plugin.js"},"changelog":[{"title":"First Release","items":["First release of the plugin!"]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -64,6 +63,7 @@ module.exports = (() => {
 		WebpackModules
 	} = Library;
 
+	const { overrideBucket } = WebpackModules.getByProps("overrideBucket");
 	const module = WebpackModules.getByProps("getCollections");
 	const { getUserProfile } = WebpackModules.getByProps("getUserProfile");
 	const { fetchProfile } = WebpackModules.getByProps("fetchProfile");
@@ -84,6 +84,8 @@ module.exports = (() => {
 			this.patchCollections();
 			this.patchSimilarApplications();
 			this.patchSearch();
+
+			overrideBucket("2021-12_app_directory", 1);
 
 			Patcher.before(ApplicationDirectoryProfile, "default", async (_, [props]) => {
 				Dispatcher.wait(async () => {
