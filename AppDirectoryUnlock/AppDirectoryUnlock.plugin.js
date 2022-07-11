@@ -3,7 +3,7 @@
  * @description Unlocks the App Directory with the use of Top.gg APIs
  * @author FedeIlLeone
  * @authorId 403195964241739776
- * @version 0.0.2
+ * @version 0.0.3
  * @updateUrl https://raw.githubusercontent.com/FedeIlLeone/BetterDiscordAddons/main/AppDirectoryUnlock/AppDirectoryUnlock.plugin.js
  * @source https://github.com/FedeIlLeone/BetterDiscordAddons/blob/main/AppDirectoryUnlock/
  */
@@ -33,7 +33,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {"info":{"name":"AppDirectoryUnlock","authors":[{"name":"FedeIlLeone","discord_id":"403195964241739776","github_username":"FedeIlLeone"}],"version":"0.0.2","description":"Unlocks the App Directory with the use of Top.gg APIs","github":"https://github.com/FedeIlLeone/BetterDiscordAddons","github_raw":"https://raw.githubusercontent.com/FedeIlLeone/BetterDiscordAddons/main/AppDirectoryUnlock/AppDirectoryUnlock.plugin.js"},"changelog":[{"title":"First Release","items":["First release of the plugin!"]}],"main":"index.js"};
+    const config = {"info":{"name":"AppDirectoryUnlock","authors":[{"name":"FedeIlLeone","discord_id":"403195964241739776","github_username":"FedeIlLeone"}],"version":"0.0.3","description":"Unlocks the App Directory with the use of Top.gg APIs","github":"https://github.com/FedeIlLeone/BetterDiscordAddons","github_raw":"https://raw.githubusercontent.com/FedeIlLeone/BetterDiscordAddons/main/AppDirectoryUnlock/AppDirectoryUnlock.plugin.js"},"changelog":[{"title":"First Release","items":["First release of the plugin!"]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -57,11 +57,7 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Library) => {
-	const {
-		DiscordModules: { Dispatcher },
-		Patcher,
-		WebpackModules
-	} = Library;
+	const { Patcher, WebpackModules } = Library;
 
 	const { overrideBucket } = WebpackModules.getByProps("overrideBucket");
 	const module = WebpackModules.getByProps("getCollections");
@@ -88,21 +84,20 @@ module.exports = (() => {
 			overrideBucket("2021-12_app_directory", 1);
 
 			Patcher.before(ApplicationDirectoryProfile, "default", async (_, [props]) => {
-				Dispatcher.wait(async () => {
-					const fetchedApp = await this.fetchApp(props.application);
-					isFetching = false;
-					if (fetchedApp) {
-						props.application = fetchedApp;
-						props.application.directory_entry = {
-							carousel_items: [],
-							detailed_description: "",
-							external_urls: [],
-							supported_locales: []
-						};
-					}
-
-					return props;
-				});
+				const fetchedApp = await this.fetchApp(props.application);
+				isFetching = false;
+				if (fetchedApp) {
+					props.application = fetchedApp;
+					props.application.directory_entry = {
+						carousel_items: [],
+						detailed_description: "",
+						external_urls: [],
+						guild_count: props.application.bot.approximate_guild_count,
+						popular_application_commands: [],
+						supported_locales: []
+					};
+				}
+				return props;
 			});
 
 			Patcher.after(WebpackModules.getByProps("useApplicationIconSrc"), "useApplicationIconSrc", (_, [app]) => {
@@ -118,9 +113,12 @@ module.exports = (() => {
 
 			const fetchedApp = await fetchAuthorization({
 				clientId: app.id,
-				scopes: []
+				scopes: ["bot"]
 			}).catch((res) => !res.ok || {});
 			if (fetchedApp.application) {
+				fetchedApp.application.bot = fetchedApp.bot;
+				fetchedApp.application.categories = app.tags.map((tag) => ({ id: 0, name: tag.displayName }));
+
 				cache.apps.set(app.id, fetchedApp.application);
 				return fetchedApp.application;
 			}
@@ -130,9 +128,11 @@ module.exports = (() => {
 
 			const fetchedFixApp = await fetchAuthorization({
 				clientId: fetchedUser.application.id,
-				scopes: []
+				scopes: ["bot"]
 			}).catch(() => ({}));
 			if (fetchedFixApp.application) {
+				fetchedFixApp.application.bot = fetchedFixApp.bot;
+
 				cache.apps.set(app.id, fetchedFixApp.application);
 				return fetchedFixApp.application;
 			}
